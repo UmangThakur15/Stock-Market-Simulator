@@ -1,89 +1,76 @@
-package controller;
-
-import model.PortfolioFlexible;
-import model.PortfolioNonFlexible;
-import view.View;
-
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.io.PrintStream;
 
 
 /**
- * This is ControllerImpl Class for the implementation of
- * ControllerMain Interface. Methods mentioned in the
- * ControllerImpl class helps in interaction between Model and View.
+ * This is Controller Class for the implementation of Controller interface. Methods mentioned in the
+ * controller class helps in interaction between Model and View.
  */
 
-public class ControllerImpl implements ControllerMain {
-  private final Scanner sc;
-
-  private int option;
-
-  private String date;
-  private ArrayList<String> tickerList;
-  private View view;
-  private String ticker;
-  private int numOfStocks;
+public class ControllerImpl implements Controller {
+  private final InputStream in;
+  private final PrintStream out;
 
 
   /**
-   * Constructor for the ControllerImpl Class initializes the input stream.
+   * Constructor for the Controller Class initializes the input stream and output stream.
    *
-   * @param in InputStream, Contains the input.
+   * @param in  InputStream Contains teh input.
+   * @param out PrintStream Contains the output.
    */
-
-  public ControllerImpl(InputStream in) {
-
-    sc = new Scanner(in);
+  public ControllerImpl(InputStream in, PrintStream out) {
+    this.in = in;
+    this.out = out;
   }
 
 
   @Override
-  public void goStock(View view, PortfolioNonFlexible model, PortfolioFlexible newModel)
-      throws InterruptedException {
-    int userId;
-    String userName;
-    String userEmail;
-    int portfolioId;
-    int portfolioOption;
-    view.printOutput(new StringBuilder("Welcome!"));
-    view.printOutput(new StringBuilder("Please enter your user id"));
-    userId = sc.nextInt();
-    view.printOutput(new StringBuilder("Please enter your user name"));
-    userName = sc.next();
-    view.printOutput(new StringBuilder("Please enter your user email id"));
-    userEmail = sc.next();
-    view.printOutput(new StringBuilder("Please enter the portfolio Id"));
-    portfolioId = sc.nextInt();
-    view.printOutput(new StringBuilder("Please choose the type of stock"));
-    view.printOutput(new StringBuilder("1. For Flexible"));
-    view.printOutput(new StringBuilder("2. For non Flexible"));
-    portfolioOption = sc.nextInt();
-    ControllerFlexible flexible = null;
-    ControllerNonFlexible nonFlexible = null;
-    switch (portfolioOption) {
-      case 1: {
-        flexible = new FlexiblePortfolio(userId,
-            userName, userEmail, portfolioId);
-        flexible.goFlexible(view, newModel, sc);
-        return;
+  public void goStock(Model model, View view) throws InterruptedException, IOException {
+    view.setInputOutput(this.in, this.out);
+    view.getInput();
+    if (view.getOption() == 1) {
+      try {
+        StringBuilder sb = new StringBuilder(model.addPortfolioByManualInput(view.getUserId(),
+                view.getUserName(),
+                view.getUserEmail(), view.getPortfolioId(), view.getTickerList()));
+        view.printOutput(sb);
+      } catch (IllegalArgumentException e) {
+        view.printError(e.getMessage());
       }
-      case 2: {
-        nonFlexible = new NonFlexiblePortfolio(userId,
-            userName, userEmail, portfolioId);
-        nonFlexible.goNonFlexible(view, model, sc);
-        return;
+
+    } else if (view.getOption() == 2) {
+      try {
+        StringBuilder sb = new StringBuilder(model.addPortfolioByFile(view.getUserId(),
+                view.getUserName(),
+                view.getUserEmail(), view.getPortfolioId()));
+        view.printOutput(sb);
+      } catch (IllegalArgumentException e) {
+        view.printError(e.getMessage());
       }
-      case 0: {
-        view.printOutput(new StringBuilder("Program closed while choosing portfolio option"));
-        return;
+
+    } else if (view.getOption() == 3) {
+
+      try {
+        StringBuilder sb = new StringBuilder(model.getComposition(view.getUserId(),
+                view.getUserName(),
+                view.getUserEmail(), view.getPortfolioId()));
+        view.printOutput(sb);
+      } catch (IllegalArgumentException e) {
+        view.printError(e.getMessage());
       }
-      default: {
-        view.printOutput(new StringBuilder("Invalid Option Chosen while choosing portfolio"));
+      //System.out.println(sb.toString());
+
+    } else {
+      //view.takeDate();
+      try {
+        StringBuilder sb = new StringBuilder(model.portfolioValue(view.getUserId(),
+                view.getUserName(),
+                view.getUserEmail(), view.getPortfolioId(), view.getDate()));
+        view.printOutput(sb);
+      } catch (IllegalArgumentException e) {
+        view.printError(e.getMessage());
       }
     }
-
   }
-
 }
